@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -23,7 +23,7 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/network.hpp>
 #include <bitcoin/node/full_node.hpp>
@@ -38,7 +38,8 @@ namespace node {
 
 using namespace boost::filesystem;
 using namespace boost::program_options;
-using namespace bc::config;
+using namespace bc::system;
+using namespace bc::system::config;
 
 // Initialize configuration by copying the given instance.
 parser::parser(const configuration& defaults)
@@ -53,7 +54,7 @@ parser::parser(config::settings context)
     using serve = message::version::service;
 
     // A node doesn't use history, and history is expensive.
-    configured.database.index_addresses = false;
+    configured.chain.index_payments = false;
 
     // Logs will slow things if not rotated.
     configured.network.rotation_size = 10000000;
@@ -410,6 +411,11 @@ options_metadata parser::load_settings()
         "Flush each write to disk, defaults to false."
     )
     (
+        "database.cache_capacity",
+        value<uint32_t>(&configured.database.cache_capacity),
+        "The maximum number of entries in the unspent outputs cache, defaults to 10000."
+    )
+    (
         "database.file_growth_rate",
         value<uint16_t>(&configured.database.file_growth_rate),
         "Full database files increase by this percentage, defaults to 5."
@@ -425,9 +431,29 @@ options_metadata parser::load_settings()
         "Transaction hash table size, defaults to 110000000."
     )
     (
-        "database.cache_capacity",
-        value<uint32_t>(&configured.database.cache_capacity),
-        "The maximum number of entries in the unspent outputs cache, defaults to 10000."
+        "database.block_table_size",
+        value<uint64_t>(&configured.database.block_table_size),
+        "Block table minimum file size, defaults to 80000000."
+    )
+    (
+        "database.candidate_index_size",
+        value<uint64_t>(&configured.database.candidate_index_size),
+        "Candidate index minimum file size, defaults to 3000000."
+    )
+    (
+        "database.confirmed_index_size",
+        value<uint64_t>(&configured.database.confirmed_index_size),
+        "Confirmed index minimum file size, defaults to 3000000."
+    )
+    (
+        "database.transaction_index_size",
+        value<uint64_t>(&configured.database.transaction_index_size),
+        "Transaction index minimum file size, defaults to 3000000000."
+    )
+    (
+        "database.transaction_table_size",
+        value<uint64_t>(&configured.database.transaction_table_size),
+        "Transaction table minimum file size, defaults to 220000000000."
     )
 
     /* [blockchain] */
@@ -450,6 +476,11 @@ options_metadata parser::load_settings()
         "blockchain.reorganization_limit",
         value<uint32_t>(&configured.chain.reorganization_limit),
         "The maximum reorganization depth, defaults to 0 (unlimited)."
+    )
+    (
+        "blockchain.block_buffer_limit",
+        value<uint32_t>(&configured.chain.block_buffer_limit),
+        "The maximum number of blocks to buffer, defaults to 0 (none)."
     )
     (
         "blockchain.checkpoint",

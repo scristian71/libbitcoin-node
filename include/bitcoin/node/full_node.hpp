@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -20,11 +20,13 @@
 #define LIBBITCOIN_NODE_FULL_NODE_HPP
 
 #include <cstdint>
+#include <cstddef>
 #include <memory>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/network.hpp>
 #include <bitcoin/node/configuration.hpp>
 #include <bitcoin/node/define.hpp>
+#include <bitcoin/node/utility/performance.hpp>
 #include <bitcoin/node/utility/reservations.hpp>
 
 namespace libbitcoin {
@@ -80,8 +82,14 @@ public:
     /// Blockchain query interface.
     virtual blockchain::safe_chain& chain();
 
+    // Downloader.
+    // ------------------------------------------------------------------------
+
     /// Get a download reservation manager.
     virtual reservation::ptr get_reservation();
+
+    /// Get the current block download queue size.
+    virtual size_t download_queue_size() const;
 
     // Subscriptions.
     // ------------------------------------------------------------------------
@@ -110,15 +118,17 @@ protected:
     network::session_outbound::ptr attach_outbound_session() override;
 
 private:
-    bool handle_reindexed(code ec, size_t fork_height,
-        header_const_ptr_list_const_ptr incoming,
-        header_const_ptr_list_const_ptr outgoing);
+    static void report(const system::chain::block& block, size_t height);
 
-    bool handle_reorganized(code ec, size_t fork_height,
-        block_const_ptr_list_const_ptr incoming,
-        block_const_ptr_list_const_ptr outgoing);
+    bool handle_reindexed(system::code ec, size_t fork_height,
+        system::header_const_ptr_list_const_ptr incoming,
+        system::header_const_ptr_list_const_ptr outgoing);
 
-    void handle_running(const code& ec, result_handler handler);
+    bool handle_reorganized(system::code ec, size_t fork_height,
+        system::block_const_ptr_list_const_ptr incoming,
+        system::block_const_ptr_list_const_ptr outgoing);
+
+    void handle_running(const system::code& ec, result_handler handler);
 
     // These are thread safe.
     reservations reservations_;

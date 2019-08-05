@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -37,8 +37,9 @@ namespace node {
 #define CLASS protocol_block_out
 
 using namespace bc::blockchain;
-using namespace bc::message;
 using namespace bc::network;
+using namespace bc::system;
+using namespace bc::system::message;
 using namespace boost::adaptors;
 using namespace std::placeholders;
 
@@ -483,6 +484,7 @@ bool protocol_block_out::handle_reorganized(code ec, size_t,
     if (chain_.is_blocks_stale())
         return true;
 
+    // No originator for parallel reorganization unless cached block (okay).
     // TODO: consider always sending the last block as compact if enabled.
     if (false && compact_to_peer_ && incoming->size() == 1)
     {

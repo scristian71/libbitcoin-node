@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -19,7 +19,7 @@
 #ifndef LIBBITCOIN_NODE_DEFINE_HPP
 #define LIBBITCOIN_NODE_DEFINE_HPP
 
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 // We use the generic helper definitions in libbitcoin to define BCN_API
 // and BCN_INTERNAL. BCN_API is used for the public API symbols. It either DLL

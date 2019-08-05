@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -35,8 +35,9 @@ namespace node {
 #define CLASS protocol_transaction_in
 
 using namespace bc::blockchain;
-using namespace bc::message;
 using namespace bc::network;
+using namespace bc::system;
+using namespace bc::system::message;
 using namespace std::placeholders;
 
 inline bool is_witness(uint64_t services)
@@ -207,7 +208,12 @@ bool protocol_transaction_in::handle_receive_transaction(const code& ec,
         return true;
 
     message->metadata.originator = nonce();
-    chain_.organize(message, BIND2(handle_store_transaction, _1, message));
+
+    //#########################################################################
+    chain_.organize(message,
+        BIND2(handle_store_transaction, _1, message));
+    //#########################################################################
+
     return true;
 }
 
@@ -245,8 +251,9 @@ void protocol_transaction_in::handle_store_transaction(const code& ec,
         return;
     }
 
+    // TODO: add statistical reporting.
     LOG_DEBUG(LOG_NODE)
-        << "Stored transaction [" << encoded << "] from [" << authority()
+        << "Stored  transaction [" << encoded << "] from [" << authority()
         << "].";
 }
 

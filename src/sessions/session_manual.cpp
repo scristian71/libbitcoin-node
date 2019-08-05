@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -21,7 +21,7 @@
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/network.hpp>
 #include <bitcoin/node/full_node.hpp>
-#include <bitcoin/node/protocols/protocol_block_sync.hpp>
+#include <bitcoin/node/protocols/protocol_block_in.hpp>
 #include <bitcoin/node/protocols/protocol_block_out.hpp>
 #include <bitcoin/node/protocols/protocol_header_in.hpp>
 #include <bitcoin/node/protocols/protocol_transaction_in.hpp>
@@ -31,8 +31,8 @@ namespace libbitcoin {
 namespace node {
 
 using namespace bc::blockchain;
-using namespace bc::message;
 using namespace bc::network;
+using namespace bc::system::message;
 using namespace std::placeholders;
 
 session_manual::session_manual(full_node& network, safe_chain& chain)
@@ -57,10 +57,9 @@ void session_manual::attach_protocols(channel::ptr channel)
     if (version >= version::level::headers)
         attach<protocol_header_in>(channel, chain_)->start();
 
-    attach<protocol_block_sync>(channel, chain_)->start();
-    ////attach<protocol_block_out>(channel, chain_)->start();
-    ////attach<protocol_transaction_in>(channel, chain_)->start();
-    ////attach<protocol_transaction_out>(channel, chain_)->start();
+    attach<protocol_block_in>(channel, chain_)->start();
+    attach<protocol_transaction_in>(channel, chain_)->start();
+    attach<protocol_transaction_out>(channel, chain_)->start();
     attach<protocol_address_31402>(channel)->start();
 }
 

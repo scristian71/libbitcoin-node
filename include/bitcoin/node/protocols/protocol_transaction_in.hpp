@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -44,16 +44,17 @@ public:
     virtual void start();
 
 private:
-    void send_get_transactions(transaction_const_ptr message);
-    void send_get_data(const code& ec, get_data_ptr message);
+    void send_get_transactions(system::transaction_const_ptr message);
+    void send_get_data(const system::code& ec, system::get_data_ptr message);
 
-    bool handle_receive_inventory(const code& ec, inventory_const_ptr message);
-    bool handle_receive_transaction(const code& ec,
-        transaction_const_ptr message);
-    void handle_store_transaction(const code& ec,
-        transaction_const_ptr message);
+    bool handle_receive_inventory(const system::code& ec,
+        system::inventory_const_ptr message);
+    bool handle_receive_transaction(const system::code& ec,
+        system::transaction_const_ptr message);
+    void handle_store_transaction(const system::code& ec,
+        system::transaction_const_ptr message);
 
-    void handle_stop(const code&);
+    void handle_stop(const system::code&);
 
     // These are thread safe.
     blockchain::safe_chain& chain_;

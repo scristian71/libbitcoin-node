@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -18,10 +18,13 @@
  */
 #include <bitcoin/node/full_node.hpp>
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <utility>
+#include <boost/format.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/node/configuration.hpp>
@@ -34,9 +37,10 @@ namespace libbitcoin {
 namespace node {
 
 using namespace bc::blockchain;
-using namespace bc::chain;
-using namespace bc::config;
 using namespace bc::network;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::config;
 using namespace boost::adaptors;
 using namespace std::placeholders;
 
@@ -158,23 +162,17 @@ void full_node::handle_running(const code& ec, result_handler handler)
         << ").";
 
     // Prime download queue.
+    // TODO: push the implementation into blockchain as necessary startup.
     for (auto height = top_candidate_height;
         height > top_valid_candidate_height; --height)
         if (chain_.get_downloadable(hash, height))
             reservations_.push_front(std::move(hash), height);
 
     LOG_INFO(LOG_NODE)
-        << "Pending candidate downloads (" << reservations_.size() << ").";
+        << "Pending candidate block downloads (" << reservations_.size()
+        << ").";
 
-    const auto next_validatable_height = top_valid_candidate_height + 1u;
-    if (chain_.get_validatable(hash, next_validatable_height))
-    {
-        LOG_INFO(LOG_NODE)
-            << "Next candidate pending validation (" << next_validatable_height
-            << ").";
-
-        chain_.prime_validation(hash, next_validatable_height);
-    }
+    chain_.prime_validation(top_valid_candidate_height + 1u);
 
     // This is invoked on a new thread.
     // This is the end of the derived run startup sequence.
@@ -238,23 +236,79 @@ bool full_node::handle_reorganized(code ec, size_t fork_height,
         return true;
 
     auto height = fork_height + outgoing->size();
+
+    // No stats for unconfirmation.
     for (const auto block: reverse(*outgoing))
     {
-        LOG_DEBUG(LOG_NODE)
-            << "Outgoing #" << height-- << " ["
-            << encode_hash(block->header().hash()) << "]";
+        LOG_INFO(LOG_NODE)
+            << "Unconfirmed #" << height-- << " ["
+            << encode_hash(block->hash()) << "]";
     }
 
+    // Only log every 100th validated block, until current or unless outgoing.
+    const auto period = chain_.is_validated_stale() &&
+       outgoing->empty() ? 100u : 1u;
+
     for (const auto block: *incoming)
-    {
-        LOG_DEBUG(LOG_NODE)
-            << "Incoming #" << ++height << " ["
-            << encode_hash(block->header().hash()) << "]";
-    }
+        if ((++height % period) == 0)
+            report(*block, height);
 
     const auto top_height = fork_height + incoming->size();
     set_top_block({ incoming->back()->hash(), top_height });
     return true;
+}
+
+template<typename Type>
+float to_float(const asio::duration& time)
+{
+    const auto count =  std::chrono::duration_cast<Type>(time).count();
+    return static_cast<float>(count);
+}
+
+template<typename Type>
+size_t to_ratio(const asio::duration& time, size_t value)
+{
+    return static_cast<size_t>(std::round(to_float<Type>(time) / value));
+}
+
+// static
+void full_node::report(const chain::block& block, size_t height)
+{
+    static const auto form = "Valid  #%06i [%s] "
+        "%|4i| txs %|4i| ins %|3i| des %|3i| pop "
+        "%|3i| acc %|3i| scr %|3i| can %|3i| con %|f|";
+
+    const auto& times = block.metadata;
+    const auto transactions = block.transactions().size();
+    const auto inputs = std::max(block.total_inputs(), size_t(1));
+
+    LOG_INFO(LOG_NODE)
+        << boost::format(form) %
+            height %
+            encode_hash(block.hash()) %
+            transactions %
+            inputs %
+
+            // query total (des)
+            to_ratio<asio::microseconds>(block.metadata.deserialize, inputs) %
+
+            // populate total (pop)
+            to_ratio<asio::microseconds>(block.metadata.populate, inputs) %
+
+            // accept total (acc)
+            to_ratio<asio::microseconds>(block.metadata.accept, inputs) %
+
+            // script total (scr)
+            to_ratio<asio::microseconds>(block.metadata.connect, inputs) %
+
+            // candidate total (can)
+            to_ratio<asio::microseconds>(block.metadata.candidate, inputs) %
+
+            // confirm total (con)
+            to_ratio<asio::microseconds>(block.metadata.confirm, inputs) %
+
+            // this block transaction cache efficiency in hits/queries
+            block.metadata.cache_efficiency;
 }
 
 // Specializations.
@@ -337,9 +391,17 @@ safe_chain& full_node::chain()
     return chain_;
 }
 
+// Downloader.
+// ----------------------------------------------------------------------------
+
 reservation::ptr full_node::get_reservation()
 {
     return reservations_.get();
+}
+
+size_t full_node::download_queue_size() const
+{
+    return reservations_.size();
 }
 
 // Subscriptions.

@@ -1,5 +1,5 @@
 ///**
-// * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+// * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
 // *
 // * This file is part of libbitcoin.
 // *
@@ -42,10 +42,10 @@
 //////  : public reservation
 //////{
 //////public:
-//////    typedef std::chrono::high_resolution_clock clock;
+//////    typedef asio::steady_clock clock;
 //////    reservation_fixture(reservations& reservations, size_t slot,
 //////        uint32_t block_latency_seconds, clock::time_point now = clock::now());
-//////    std::chrono::microseconds rate_window() const;
+//////    std::chrono::nanoseconds rate_window() const;
 //////    clock::time_point now() const override;
 //////    bool pending() const;
 //////    void set_pending(bool value);

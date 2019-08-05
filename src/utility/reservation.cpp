@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -24,7 +24,7 @@
 #include <functional>
 #include <utility>
 #include <boost/format.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/node/define.hpp>
 #include <bitcoin/node/utility/performance.hpp>
 #include <bitcoin/node/utility/reservations.hpp>
@@ -33,13 +33,14 @@ namespace libbitcoin {
 namespace node {
 
 using namespace bc::blockchain;
-using namespace bc::chain;
+using namespace bc::system;
+using namespace bc::system::chain;
 
 // The minimum amount of block history to measure to determine window.
 static constexpr size_t minimum_history = 3;
 
-// Simple conversion factor, since we trace in microseconds.
-static constexpr size_t micro_per_second = 1000 * 1000;
+// Simple conversion factor, since we trace in nanoseconds.
+static constexpr size_t nano_per_second = 1000 * 1000 * 1000;
 
 reservation::reservation(reservations& reservations, size_t slot,
     float maximum_deviation, uint32_t block_latency_seconds)
@@ -48,7 +49,7 @@ reservation::reservation(reservations& reservations, size_t slot,
     reservations_(reservations),
     slot_(slot),
     maximum_deviation_(maximum_deviation),
-    rate_window_(minimum_history * block_latency_seconds * micro_per_second),
+    rate_window_(minimum_history * block_latency_seconds * nano_per_second),
     idle_limit_(asio::steady_clock::now()),
     rate_({ true, 0, 0, 0 })
 {
@@ -97,15 +98,9 @@ void reservation::set_pending(bool value)
 }
 
 // protected
-asio::microseconds reservation::rate_window() const
+asio::nanoseconds reservation::rate_window() const
 {
     return rate_window_;
-}
-
-// protected
-reservation::clock_point reservation::now() const
-{
-    return std::chrono::high_resolution_clock::now();
 }
 
 // Rate methods.
@@ -148,15 +143,23 @@ void reservation::clear_history()
 // protected
 // TODO: create an aggregate event counter on reservations object and report
 // on current aggregate rate for every new block.
-void reservation::update_history(size_t events,
-    const asio::microseconds& database)
+void reservation::update_history(block_const_ptr block)
 {
+    static constexpr auto protocol_level = message::version::level::canonical;
+    const auto events = block->serialized_size(protocol_level);
+
+    // Summarize the major local cost of processing the block.
+    const auto local_cost = 
+        block->metadata.deserialize +
+        block->metadata.check +
+        block->metadata.associate;
+
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     history_mutex_.lock_upgrade();
 
-    const auto end = now();
-    const auto event_start = end - database;
+    const auto end = asio::steady_clock::now();
+    const auto event_start = end - local_cost;
     const auto window_start = end - rate_window();
     const auto history_count = history_.size();
 
@@ -166,7 +169,7 @@ void reservation::update_history(size_t events,
         it = history_.erase(it));
 
     const auto mature = history_count > history_.size();
-    const auto event_cost = static_cast<uint64_t>(database.count());
+    const auto event_cost = static_cast<uint64_t>(local_cost.count());
 
     history_mutex_.unlock_upgrade_and_lock();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -184,22 +187,21 @@ void reservation::update_history(size_t events,
     performance rate{ false, 0, 0, 0 };
     const auto front = history_.front().time;
 
-    // Summarize event count and database cost.
+    // Summarize event count and local cost.
     for (const auto& record: history_)
     {
         BITCOIN_ASSERT(rate.events <= max_size_t - record.events);
         rate.events += record.events;
 
-        BITCOIN_ASSERT(rate.discount <= max_uint64 - record.database);
-        rate.discount += record.database;
+        BITCOIN_ASSERT(rate.discount <= max_uint64 - record.discount);
+        rate.discount += record.discount;
     }
 
     history_mutex_.unlock_shared();
     ///////////////////////////////////////////////////////////////////////////
 
     // Calculate the duration of the rate window.
-    auto window = mature ? rate_window() : end - front;
-    auto duration = std::chrono::duration_cast<asio::microseconds>(window);
+    auto duration = mature ? rate_window() : end - front;
     rate.window = static_cast<uint64_t>(duration.count());
 
     // Update the rate cache.
@@ -307,44 +309,6 @@ bool reservation::find_height_and_erase(const hash_digest& hash,
     ///////////////////////////////////////////////////////////////////////////
 
     return true;
-}
-
-code reservation::import(safe_chain& chain, block_const_ptr block,
-    size_t height)
-{
-    const auto start = now();
-
-    //#########################################################################
-    const auto ec = chain.organize(block, height);
-    //#########################################################################
-
-    if (ec)
-        return ec;
-
-    // Recompute rate performance.
-    auto size = block->serialized_size(message::version::level::canonical);
-    auto time = std::chrono::duration_cast<asio::microseconds>(now() - start);
-
-    // Update history data for computing peer performance standard deviation.
-    update_history(size, time);
-    const auto remaining = reservations_.size();
-
-    // Only log performance every ~10th block, until ~one day left.
-    if (remaining < 144 || height % 10 == 0)
-    {
-        // Block #height (slot) [hash] Mbps local-cost% remaining-blocks.
-        static const auto form = "Block #%06i (%02i) [%s] %07.3f %05.2f%% %i";
-        const auto record = rate();
-        const auto encoded = encode_hash(block->hash());
-        const auto database_percentage = record.ratio() * 100;
-
-        LOG_INFO(LOG_NODE)
-            << boost::format(form) % height % slot() % encoded %
-            performance::to_megabits_per_second(record.rate()) %
-            database_percentage % remaining;
-    }
-
-    return error::success;
 }
 
 // Give the minimal row ~ half of our hashes, return false if minimal is empty.

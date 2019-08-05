@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -18,12 +18,13 @@
  */
 #include <bitcoin/node/settings.hpp>
 
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 namespace libbitcoin {
 namespace node {
 
-using namespace bc::asio;
+using namespace bc::system;
+using namespace bc::system::asio;
 
 settings::settings()
   : maximum_deviation(1.5),

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -35,10 +35,11 @@ using boost::format;
 using namespace boost;
 using namespace boost::filesystem;
 using namespace boost::system;
-using namespace bc::chain;
-using namespace bc::config;
 using namespace bc::database;
 using namespace bc::network;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::config;
 using namespace std::placeholders;
 
 static const auto application_name = "bn";
@@ -108,7 +109,7 @@ void executor::do_version()
     output_ << format(BN_VERSION_MESSAGE) %
         LIBBITCOIN_NODE_VERSION %
         LIBBITCOIN_BLOCKCHAIN_VERSION %
-        LIBBITCOIN_VERSION << std::endl;
+        LIBBITCOIN_SYSTEM_VERSION << std::endl;
 }
 
 // Emit to the log.
@@ -124,7 +125,7 @@ bool executor::do_initchain()
         LOG_INFO(LOG_NODE) << format(BN_INITIALIZING_CHAIN) % directory;
 
         const auto& bitcoin_settings = metadata_.configured.bitcoin;
-        const auto result = data_base(metadata_.configured.database)
+        const auto result = data_base(metadata_.configured.database, false)
             .create(bitcoin_settings.genesis_block);
 
         LOG_INFO(LOG_NODE) << BN_INITCHAIN_COMPLETE;

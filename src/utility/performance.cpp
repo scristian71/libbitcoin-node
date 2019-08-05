@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -21,19 +21,19 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 namespace libbitcoin {
 namespace node {
 
 // static
-double performance::to_megabits_per_second(double bytes_per_microsecond)
+double performance::to_megabits_per_second(double bytes_per_nanosecond)
 {
     // Use standard telecom definition of a megabit (125,000 bytes).
     static constexpr auto bytes_per_megabyte = 1000.0 * 1000.0;
-    static constexpr auto micro_per_second = 1000.0 * 1000.0;
+    static constexpr auto nano_per_second = 1000.0 * 1000.0 * 1000.0;
     static const auto bytes_per_megabit = bytes_per_megabyte / byte_bits;
-    return micro_per_second * bytes_per_microsecond / bytes_per_megabit;
+    return nano_per_second * bytes_per_nanosecond / bytes_per_megabit;
 }
 
 double performance::rate() const

@@ -1,5 +1,5 @@
 ///**
-// * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+// * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
 // *
 // * This file is part of libbitcoin.
 // *
@@ -78,7 +78,7 @@
 //////}
 //////
 //////// Accessor
-//////std::chrono::microseconds reservation_fixture::rate_window() const
+//////std::chrono::nanoseconds reservation_fixture::rate_window() const
 //////{
 //////    return reservation::rate_window();
 //////}
@@ -96,7 +96,7 @@
 //////}
 //////
 //////// Stub
-//////std::chrono::high_resolution_clock::time_point reservation_fixture::now() const
+//////std::asio::time_point reservation_fixture::now() const
 //////{
 //////    return now_;
 //////}

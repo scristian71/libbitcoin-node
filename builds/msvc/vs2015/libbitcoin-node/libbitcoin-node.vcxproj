@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- |  Copyright (c) 2014-2015 libbitcoin-node developers (see COPYING).
+ |  Copyright (c) 2014-2019 libbitcoin-node developers (see COPYING).
  |
  |         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
  |
@@ -78,7 +78,6 @@
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_block_in.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_block_out.cpp" />
-    <ClCompile Include="..\..\..\..\src\protocols\protocol_block_sync.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_header_in.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_transaction_in.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol_transaction_out.cpp" />
@@ -100,7 +99,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\node\parser.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\node\protocols\protocol_block_in.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\node\protocols\protocol_block_out.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\node\protocols\protocol_block_sync.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\node\protocols\protocol_header_in.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\node\protocols\protocol_transaction_in.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\node\protocols\protocol_transaction_out.hpp" />

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -25,7 +25,7 @@
 #include <numeric>
 #include <utility>
 #include <vector>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/node/define.hpp>
 #include <bitcoin/node/utility/check_list.hpp>
 #include <bitcoin/node/utility/performance.hpp>
@@ -36,7 +36,8 @@ namespace libbitcoin {
 namespace node {
 
 using namespace bc::blockchain;
-using namespace bc::chain;
+using namespace bc::system;
+using namespace bc::system::chain;
 
 reservations::reservations(size_t minimum_peer_count, float maximum_deviation,
     uint32_t block_latency_seconds)
@@ -70,7 +71,7 @@ void reservations::push_front(hash_digest&& hash, size_t height)
 ////{
 ////    for (auto row: table_)
 ////    {
-////        LOG_DEBUG(LOG_NODE)
+////        LOG_VERBOSE(LOG_NODE)
 ////            << slot
 ////            << " slot: " << row->slot()
 ////            << " size: " << row->size()
@@ -158,7 +159,7 @@ bool reservations::reserve(reservation::ptr minimal)
 
     if (!minimal->empty())
     {
-        LOG_DEBUG(LOG_NODE)
+        LOG_VERBOSE(LOG_NODE)
             << "Minimal (" << minimal ->slot() << ") is not empty.";
         return true;
     }
@@ -173,7 +174,7 @@ bool reservations::reserve(reservation::ptr minimal)
 
     if (reserved)
     {
-        LOG_DEBUG(LOG_NODE)
+        LOG_VERBOSE(LOG_NODE)
             << "Reserved " << minimal->size() << " blocks to slot ("
             << minimal->slot() << ").";
     }
@@ -186,7 +187,7 @@ bool reservations::partition(reservation::ptr minimal)
 {
     if (!minimal->empty())
     {
-        LOG_DEBUG(LOG_NODE)
+        LOG_VERBOSE(LOG_NODE)
             << "Minimal (" << minimal->slot() << ") is not empty.";
         return true;
     }
@@ -195,13 +196,13 @@ bool reservations::partition(reservation::ptr minimal)
 
     if (!maximal)
     {
-        LOG_DEBUG(LOG_NODE)
+        LOG_VERBOSE(LOG_NODE)
             << "Maximal (" << minimal->slot() << ") not found.";
         return false;
     }
     else if (maximal == minimal)
     {
-        LOG_DEBUG(LOG_NODE)
+        LOG_VERBOSE(LOG_NODE)
             << "Minimal (" << minimal->slot() << ") is maximal.";
         return false;
     }
@@ -211,7 +212,7 @@ bool reservations::partition(reservation::ptr minimal)
 
     if (partitioned)
     {
-        LOG_DEBUG(LOG_NODE)
+        LOG_VERBOSE(LOG_NODE)
             << "Partitioned " << minimal->size() << " blocks from slot ("
             << maximal->slot() << ") to slot (" << minimal->slot() << ").";
     }

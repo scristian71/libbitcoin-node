@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <boost/format.hpp>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/network.hpp>
 #include <bitcoin/node/define.hpp>
@@ -33,15 +34,10 @@ namespace node {
 #define CLASS protocol_header_in
 
 using namespace bc::blockchain;
-using namespace bc::message;
 using namespace bc::network;
+using namespace bc::system;
+using namespace bc::system::message;
 using namespace std::placeholders;
-
-// This creates pointer without copying the element and without destruct.
-static std::shared_ptr<const header> unsafe_pointer(const header& element)
-{
-    return std::shared_ptr<const header>(&element, [](const header*) {});
-}
 
 protocol_header_in::protocol_header_in(full_node& node, channel::ptr channel,
     safe_chain& chain)
@@ -83,7 +79,7 @@ void protocol_header_in::send_top_get_headers(const hash_digest& stop_hash)
 
 void protocol_header_in::send_next_get_headers(const hash_digest& start_hash)
 {
-    // TODO: this should generate a full locator, possibly on weak branch.
+    // This is specific to the peer so just use only last hash as start.
     const get_headers message{ { start_hash }, null_hash };
 
     SEND2(message, handle_send, _1, message.command);
@@ -173,21 +169,22 @@ void protocol_header_in::store_header(size_t index, headers_const_ptr message)
         return;
     }
 
-    // The unshared_pointer is safe because the message is captured with it.
-    // This allows metadata update on the header within the existing vector
-    // while maintaining interface consistency with blockchain.
-    chain_.organize(unsafe_pointer(message->elements()[index]),
-        BIND3(handle_store_header, _1, index, message));
+    // TODO: avoid this copy.
+    auto copy = std::make_shared<const header>(message->elements()[index]);
+
+    //#########################################################################
+    chain_.organize(copy,
+        BIND4(handle_store_header, _1, copy, index, message));
+    //#########################################################################
 }
 
-void protocol_header_in::handle_store_header(const code& ec, size_t index,
-    headers_const_ptr message)
+void protocol_header_in::handle_store_header(const code& ec,
+    header_const_ptr header, size_t index, headers_const_ptr message)
 {
     if (stopped(ec))
         return;
 
-    const auto& header = message->elements()[index];
-    const auto hash = header.hash();
+    const auto hash = header->hash();
     const auto encoded = encode_hash(hash);
 
     if (ec == error::orphan_block)
@@ -201,10 +198,13 @@ void protocol_header_in::handle_store_header(const code& ec, size_t index,
             return;
         }
 
-        // Try to fill the gap between the current header tree and this header.
         LOG_DEBUG(LOG_NODE)
             << "Orphan header [" << encoded << "] from [" << authority() << "]";
-        send_top_get_headers(hash);
+
+        // Use notification to fill gap unless initial already catching up.
+        if (!chain_.is_candidates_stale())
+            send_top_get_headers(hash);
+
         return;
     }
     else if (ec == error::insufficient_work)
@@ -214,7 +214,7 @@ void protocol_header_in::handle_store_header(const code& ec, size_t index,
             << "Pooled header [" << encoded << "] from [" << authority()
             << "] " << ec.message();
     }
-    if (ec == error::duplicate_block)
+    else if (ec == error::duplicate_block)
     {
         // Allow duplicate header to continue as desirable race with peers.
         LOG_VERBOSE(LOG_NODE)
@@ -232,26 +232,38 @@ void protocol_header_in::handle_store_header(const code& ec, size_t index,
     }
     else
     {
-        const auto state = header.metadata.state;
+        // HACK: chain state only for logging here, otherwise could clear.
+        const auto state = header->metadata.state;
         BITCOIN_ASSERT(state);
 
-        // Only log every 1000th header, until current.
-        size_t period = chain_.is_candidates_stale() ? 1000 : 1;
+        // Only log every 100th header, until current number of candidates.
+        const auto period = chain_.is_candidates_stale() ? 100u : 1u;
 
-        if (state->height() % period == 0)
-        {
-            const auto checked = state->is_under_checkpoint() ? "*" : "";
-
-            LOG_INFO(LOG_NODE)
-                << "Header #" << state->height() << " ["
-                << encoded << "] from [" << authority() << "] ("
-                << state->enabled_forks() << checked << ", "
-                << state->minimum_block_version() << ").";
-        }
+        if ((state->height() % period) == 0)
+            report(*header);
     }
 
+    // TODO: optimize with loop?
     // Break off recursion.
     DISPATCH_CONCURRENT2(store_header, ++index, message);
+}
+
+// TODO: add header performance timers.
+void protocol_header_in::report(const chain::header& header) const
+{
+    const auto state = header.metadata.state;
+
+    // Header #height [hash] authority 42*
+    static const auto form =
+        "Header #%06i [%s] %s %i%s";
+
+    LOG_INFO(LOG_NODE)
+        << boost::format(form) %
+            state->height() %
+            encode_hash(header.hash()) %
+            authority() %
+            state->enabled_forks() %
+            (state->is_under_checkpoint() ? "*" : "");
 }
 
 // Subscription.

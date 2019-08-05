@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -33,10 +33,11 @@ namespace node {
 #define CLASS protocol_transaction_out
 
 using namespace bc::blockchain;
-using namespace bc::chain;
 using namespace bc::database;
-using namespace bc::message;
 using namespace bc::network;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::message;
 using namespace boost::adaptors;
 using namespace std::placeholders;
 

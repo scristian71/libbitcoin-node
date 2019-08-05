@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2017 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -33,16 +33,16 @@ public:
     bool empty() const;
 
     /// Enqueue the set of hashes in order, true if previously empty.
-    bool enqueue(get_data_ptr message);
+    bool enqueue(system::get_data_ptr message);
 
     /// Remove the next entry if it matches the hash, true if matched.
-    bool dequeue(const hash_digest& hash);
+    bool dequeue(const system::hash_digest& hash);
 
 private:
-    typedef std::queue<hash_digest> queue;
+    typedef std::queue<system::hash_digest> queue;
 
     queue queue_;
-    mutable shared_mutex mutex_;
+    mutable system::shared_mutex mutex_;
 };
 
 } // namespace node
