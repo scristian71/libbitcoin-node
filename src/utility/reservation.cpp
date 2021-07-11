@@ -43,12 +43,12 @@ static constexpr size_t minimum_history = 3;
 static constexpr size_t nano_per_second = 1000 * 1000 * 1000;
 
 reservation::reservation(reservations& reservations, size_t slot,
-    float maximum_deviation, uint32_t block_latency_seconds)
+    float /* maximum_deviation */, uint32_t block_latency_seconds)
   : stopped_(true),
     pending_(false),
     reservations_(reservations),
     slot_(slot),
-    maximum_deviation_(maximum_deviation),
+    ////maximum_deviation_(maximum_deviation),
     rate_window_(minimum_history * block_latency_seconds * nano_per_second),
     idle_limit_(asio::steady_clock::now()),
     rate_({ true, 0, 0, 0 })
@@ -59,6 +59,8 @@ void reservation::start()
 {
     stopped_ = false;
     pending_ = true;
+
+    // TODO: vc120 hard error.
     idle_limit_.store(asio::steady_clock::now() + rate_window_);
 }
 
@@ -173,6 +175,8 @@ void reservation::update_history(block_const_ptr block)
 
     history_mutex_.unlock_upgrade_and_lock();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    // TODO: vc120 hard error.
     history_.push_back({ events, event_cost, event_start });
 
     if (history_.size() < minimum_history)

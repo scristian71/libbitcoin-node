@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2019 libbitcoin-node developers (see COPYING).
+#  Copyright (c) 2014-2020 libbitcoin-node developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -149,17 +149,17 @@ AC_MSG_RESULT([$enable_isystem])
 
 # Check dependencies.
 #==============================================================================
-# Require Boost of at least version 1.62.0 and output ${boost_CPPFLAGS/LDFLAGS}.
+# Require Boost of at least version 1.72.0 and output ${boost_CPPFLAGS/LDFLAGS}.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*],
-    [AX_BOOST_BASE([1.62.0],
+    [AX_BOOST_BASE([1.72.0],
         [AC_SUBST([boost_CPPFLAGS], [${BOOST_CPPFLAGS}])
          AC_SUBST([boost_ISYS_CPPFLAGS], [`echo ${BOOST_CPPFLAGS} | $SED s/^-I/-isystem/g | $SED s/' -I'/' -isystem'/g`])
          AC_SUBST([boost_LDFLAGS], [${BOOST_LDFLAGS}])
          AC_MSG_NOTICE([boost_CPPFLAGS : ${boost_CPPFLAGS}])
          AC_MSG_NOTICE([boost_ISYS_CPPFLAGS : ${boost_ISYS_CPPFLAGS}])
          AC_MSG_NOTICE([boost_LDFLAGS : ${boost_LDFLAGS}])],
-        [AC_MSG_ERROR([Boost 1.62.0 or later is required but was not found.])])])
+        [AC_MSG_ERROR([Boost 1.72.0 or later is required but was not found.])])])
 
 AS_CASE([${enable_isystem}],[yes],
     [AC_SUBST([boost_BUILD_CPPFLAGS], [${boost_ISYS_CPPFLAGS}])],
@@ -206,8 +206,7 @@ AC_MSG_NOTICE([bash_completion_BUILD_CPPFLAGS : ${bash_completion_BUILD_CPPFLAGS
 PKG_CHECK_MODULES([bitcoin_blockchain], [libbitcoin-blockchain >= 4.0.0],
     [bitcoin_blockchain_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-blockchain >= 4.0.0" 2>/dev/null`"
      bitcoin_blockchain_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-blockchain >= 4.0.0" 2>/dev/null`"],
-    [bitcoin_blockchain_INCLUDEDIR=""
-     bitcoin_blockchain_OTHER_CFLAGS=""])
+    [AC_MSG_ERROR([libbitcoin-blockchain >= 4.0.0 is required but was not found.])])
 AC_SUBST([bitcoin_blockchain_PKG], ['libbitcoin-blockchain >= 4.0.0'])
 AC_SUBST([bitcoin_blockchain_CPPFLAGS], [${bitcoin_blockchain_CFLAGS}])
 AS_IF([test x${bitcoin_blockchain_INCLUDEDIR} != "x"],
@@ -230,8 +229,7 @@ AC_MSG_NOTICE([bitcoin_blockchain_BUILD_CPPFLAGS : ${bitcoin_blockchain_BUILD_CP
 PKG_CHECK_MODULES([bitcoin_network], [libbitcoin-network >= 4.0.0],
     [bitcoin_network_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-network >= 4.0.0" 2>/dev/null`"
      bitcoin_network_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-network >= 4.0.0" 2>/dev/null`"],
-    [bitcoin_network_INCLUDEDIR=""
-     bitcoin_network_OTHER_CFLAGS=""])
+    [AC_MSG_ERROR([libbitcoin-network >= 4.0.0 is required but was not found.])])
 AC_SUBST([bitcoin_network_PKG], ['libbitcoin-network >= 4.0.0'])
 AC_SUBST([bitcoin_network_CPPFLAGS], [${bitcoin_network_CFLAGS}])
 AS_IF([test x${bitcoin_network_INCLUDEDIR} != "x"],

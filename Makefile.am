@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2019 libbitcoin-node developers (see COPYING).
+#  Copyright (c) 2014-2020 libbitcoin-node developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -41,6 +41,7 @@ src_libbitcoin_node_la_SOURCES = \
     src/settings.cpp \
     src/protocols/protocol_block_in.cpp \
     src/protocols/protocol_block_out.cpp \
+    src/protocols/protocol_compact_filter_out.cpp \
     src/protocols/protocol_header_in.cpp \
     src/protocols/protocol_transaction_in.cpp \
     src/protocols/protocol_transaction_out.cpp \
@@ -109,6 +110,7 @@ include_bitcoin_node_protocolsdir = ${includedir}/bitcoin/node/protocols
 include_bitcoin_node_protocols_HEADERS = \
     include/bitcoin/node/protocols/protocol_block_in.hpp \
     include/bitcoin/node/protocols/protocol_block_out.hpp \
+    include/bitcoin/node/protocols/protocol_compact_filter_out.hpp \
     include/bitcoin/node/protocols/protocol_header_in.hpp \
     include/bitcoin/node/protocols/protocol_transaction_in.hpp \
     include/bitcoin/node/protocols/protocol_transaction_out.hpp
